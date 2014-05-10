@@ -173,6 +173,7 @@ download :: Handle -> Handle -> FilePath -> FilePath -> IO ()
 download r w dir fn = do
 	hPutStrLn w $ show $ DownloadRequest fn
 	msg <- hGetLine r
+	hPutStrLn stderr $ "Receive: " ++ msg
 	case "DownloadReply" `L.isPrefixOf` msg of
 		False -> hPutStrLn stderr "Unexpected command when downloading"
 		_ -> do
@@ -187,6 +188,7 @@ reqVector :: Handle -> Handle -> IO Vector
 reqVector r w = do
 	hPutStrLn w $ show VectorRequest
 	msg <- hGetLine r
+	hPutStrLn stderr $ "Receive: " ++ msg
 	case "VectorReply" `L.isPrefixOf` msg of
 		False -> do
 			hPutStrLn stderr "Unexpected command when requesting vector"
@@ -199,6 +201,7 @@ reqStamp :: Handle -> Handle -> IO StampVector
 reqStamp r w = do
 	hPutStrLn w $ show StampRequest
 	msg <- hGetLine r
+	hPutStrLn stderr $ "Receive: " ++ msg
 	case "StampReply" `L.isPrefixOf` msg of
 		False -> do
 			hPutStrLn stderr "Unexpected command when requesting stamp"
