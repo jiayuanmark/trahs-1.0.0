@@ -240,7 +240,7 @@ storeState dir rid vec ws = do
 -- |
 clientSync :: Handle -> Handle -> FilePath -> IO ()
 clientSync r w dir = do
-	ensureDir $ dir ++ "/" ++ ".trahs.db"
+	ensureDir $ dir ++ "/.trahs.db"
 	replica <- getReplicaID dir
 	lvv <- getVector dir replica
 	lws <- getWriteStamp dir replica $ fromJust $ Map.lookup replica lvv
@@ -276,11 +276,12 @@ serverLoop turn rid vector stamp r w dir = do
 -- reading input from @r@ and writing it to @w@.
 server :: Bool -> Handle -> Handle -> FilePath -> IO ()
 server turn r w dir = do
-	ensureDir $ dir ++ "/" ++ ".trahs.db"
+	ensureDir $ dir ++ "/.trahs.db"
 	rid <- getReplicaID dir
 	vector <- getVector dir rid
 	stamp <- getWriteStamp dir rid . fromJust $ Map.lookup rid vector
 	storeState dir rid vector stamp
+	hPutStrLn stderr "haha"
 	serverLoop turn rid vector stamp r w dir
 
 
