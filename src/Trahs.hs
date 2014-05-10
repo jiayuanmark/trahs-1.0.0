@@ -38,6 +38,7 @@ data Cmd = DownloadRequest String
 		 | Switch
 		 deriving Show
 
+
 -- | Command for executing trahs on a remote system.  The '@' will be
 -- replaced by the hostname, and the directory will be appended.
 trassh :: String
@@ -163,7 +164,7 @@ mergeVector :: Vector -> Vector -> Vector
 mergeVector lvv rvv = Map.fromListWith max $ Map.toList lvv ++ Map.toList rvv
 
 
-
+-- | Parse protocol's command
 parseCmd :: String -> Cmd
 parseCmd str =
 	case header of
@@ -206,6 +207,7 @@ reqVector r w = do
 		_ -> do
 			hPutStrLn stderr "Unexpected command when requesting vector"
 			return Map.empty
+
 
 -- | @client@ requests for write stamp from @server@
 reqStamp :: Handle -> Handle -> IO StampVector
