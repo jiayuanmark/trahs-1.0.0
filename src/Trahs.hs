@@ -189,7 +189,7 @@ download r w dir fn = do
 	case parseCmd msg of
 		DownloadReply content -> do
 			f <- openFile (dir ++ "/" ++ fn) WriteMode
-			hPutStrLn f $ content
+			hPutStr f $ content
 			hClose f
 			return ()
 		_ -> hPutStrLn stderr "Unexpected command when downloading"
