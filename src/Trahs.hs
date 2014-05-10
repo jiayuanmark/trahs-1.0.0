@@ -231,7 +231,7 @@ storeState dir rid vec ws = do
 		vecfile = newdb ++ "/.vec"
 		wsfile = newdb ++ "/.ws"
 		removeDB db = do
-			forM_ (map ((++) (db ++ "/")) [ ".id", ".vec", ".ws "])
+			forM_ (map ((++) (db ++ "/")) [ ".id", ".vec", ".ws"])
 				$ (\x -> do
 					exist <- doesFileExist x 
 					case exist of
