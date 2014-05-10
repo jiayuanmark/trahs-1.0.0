@@ -222,7 +222,7 @@ reqStamp r w = do
 
 -- | @client@ flags conflict 
 flagConflict :: Handle -> Handle -> FilePath -> FilePath -> IO ()
-flagConflict _ _ _ _ = hPutStrLn stderr "Conflict"
+flagConflict _ _ dir fn = hPutStrLn stderr $ "Conflict on" ++ dir ++ "/" ++ fn
 
 
 -- | Dump synchronization states into database on disk 
