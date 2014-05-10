@@ -206,6 +206,7 @@ reqStamp r w = do
 		_ -> return $ read $ stripCommand msg
 
 
+
 -- | @client@ flags conflict 
 flagConflict :: Handle -> Handle -> FilePath -> FilePath -> IO ()
 flagConflict _ _ _ _ = hPutStrLn stderr "Conflict"
@@ -267,23 +268,21 @@ serverLoop turn rid vector stamp r w dir = do
 			hPutStrLn w . show $ StampReply $ show stamp
 			serverLoop turn rid vector stamp r w dir
 		("Switch":_) -> do
-			if turn
-			then return ()
-			else client False r w dir
+			when turn $ client False r w dir
 		_ -> hPutStrLn stderr "Unrecognized command"
 
 
--- | @server r w dir@ runs the code to serve the contents of @dir@,
+-- | @server real r w dir@ runs the code to serve the contents of @dir@,
 -- reading input from @r@ and writing it to @w@.
-server :: Handle -> Handle -> FilePath -> IO ()
-server r w dir = do
-  hPutStrLn w "I am the server"
-  line <- hGetLine r
-  -- If the command asked us to switch roles, then at this point we
-  -- would run client False r w dir here.  Otherwise want to process
-  -- command and keep looping.
-  hPutStrLn w $ "You said " ++ line
-  
+server :: Bool -> Handle -> Handle -> FilePath -> IO ()
+server turn r w dir = do
+	ensureDir $ dir ++ "/" ++ ".trahs.db"
+	rid <- getReplicaID dir
+	vector <- getVector dir rid
+	stamp <- getWriteStamp dir rid . fromJust $ Map.lookup rid vector
+	storeState dir rid vector stamp
+	serverLoop turn rid vector stamp r w dir
+
 
 -- | @client turn r w dir@ runs the client to update @dir@ based on
 -- the remote contents.  Commands for the remote server are written to
@@ -294,13 +293,9 @@ server r w dir = do
 -- done.
 client :: Bool -> Handle -> Handle -> FilePath -> IO ()
 client turn r w dir = do
-  line <- hGetLine r
-  hPutStrLn stderr $ "The server said " ++ show line
-  hPutStrLn w "Hello, server"
-  line' <- hGetLine r
-  hPutStrLn stderr $ "The server said " ++ show line'
-  -- At the end, if turn == True, then we issue some command to swap
-  -- roles and run server r w dir.
+	clientSync r w dir
+	hPutStrLn w $ show Switch
+	when turn $ server False w r dir
 
 
 hostCmd :: String -> FilePath -> IO String
@@ -334,7 +329,7 @@ trahs = do
   args <- getArgs
   case args of
     ["--server", l] -> do hSetBuffering stdout LineBuffering
-                          server stdin stdout l
+                          server True stdin stdout l
     [r, l] | (host, ':':rdir) <- break (== ':') r -> connect host rdir l
     _ -> do hPutStrLn stderr "usage: trahs HOST:DIR LOCALDIR"
             exitFailure
