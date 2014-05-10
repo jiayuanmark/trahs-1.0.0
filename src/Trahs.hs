@@ -174,7 +174,7 @@ parseCmd str =
 		"StampRequest" -> StampRequest
 		"StampReply" -> StampReply payload
 		"Switch" -> Switch
-		_ -> error "undefined command"
+		_ -> error "Undefined command"
 	where
 		(header, rest) = break (== ' ') str
 		payload = read $ drop 1 rest
@@ -308,7 +308,7 @@ client :: Bool -> Handle -> Handle -> FilePath -> IO ()
 client turn r w dir = do
 	clientSync r w dir
 	hPutStrLn w $ show Switch
-	when turn $ server False w r dir
+	when turn $ server False r w dir
 
 
 hostCmd :: String -> FilePath -> IO String
