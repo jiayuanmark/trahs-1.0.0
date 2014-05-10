@@ -220,7 +220,7 @@ storeState dir rid vec ws = do
 	writeFile vecfile $ show vec
 	writeFile wsfile $ show ws
 	removeDB olddb
-	renameDirectory olddb newdb
+	renameDirectory newdb olddb
 	where
 		newdb = dir ++ "/.trahs.db~"
 		olddb = dir ++ "/.trahs.db"
@@ -281,7 +281,6 @@ server turn r w dir = do
 	vector <- getVector dir rid
 	stamp <- getWriteStamp dir rid . fromJust $ Map.lookup rid vector
 	storeState dir rid vector stamp
-	hPutStrLn stderr "haha"
 	serverLoop turn rid vector stamp r w dir
 
 
