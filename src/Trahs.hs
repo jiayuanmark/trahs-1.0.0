@@ -163,9 +163,21 @@ mergeVector :: Vector -> Vector -> Vector
 mergeVector lvv rvv = Map.fromListWith max $ Map.toList lvv ++ Map.toList rvv
 
 
--- | Strip command type off the contents 
-stripCommand :: String -> String
-stripCommand = takeWhile (/= '\"') . tail . dropWhile (/= '\"')
+
+parseCmd :: String -> Cmd
+parseCmd str =
+	case header of
+		"DownloadRequest" -> DownloadRequest payload
+		"DownloadReply" -> DownloadReply payload
+		"VectorRequest" -> VectorRequest
+		"VectorReply" -> VectorReply payload
+		"StampRequest" -> StampRequest
+		"StampReply" -> StampReply payload
+		"Switch" -> Switch
+		_ -> error "undefined command"
+	where
+		(header, rest) = break (== ' ') str
+		payload = read $ drop 1 rest
 
 
 -- | @client@ downloads @fn@ from @server@ to @dir/fn@.
@@ -174,13 +186,13 @@ download r w dir fn = do
 	hPutStrLn w $ show $ DownloadRequest fn
 	msg <- hGetLine r
 	hPutStrLn stderr $ "Receive: " ++ msg
-	case "DownloadReply" `L.isPrefixOf` msg of
-		False -> hPutStrLn stderr "Unexpected command when downloading"
-		_ -> do
+	case parseCmd msg of
+		DownloadReply content -> do
 			f <- openFile (dir ++ "/" ++ fn) WriteMode
-			hPutStrLn f $ stripCommand msg
+			hPutStrLn f $ content
 			hClose f
 			return ()
+		_ -> hPutStrLn stderr "Unexpected command when downloading"
 
 
 -- | @client@ requests for vector from @server@
@@ -189,12 +201,11 @@ reqVector r w = do
 	hPutStrLn w $ show VectorRequest
 	msg <- hGetLine r
 	hPutStrLn stderr $ "Receive: " ++ msg
-	case "VectorReply" `L.isPrefixOf` msg of
-		False -> do
+	case parseCmd msg of
+		VectorReply content -> return $ read content
+		_ -> do
 			hPutStrLn stderr "Unexpected command when requesting vector"
 			return Map.empty
-		_ -> return $ read $ stripCommand msg
-
 
 -- | @client@ requests for write stamp from @server@
 reqStamp :: Handle -> Handle -> IO StampVector
@@ -202,12 +213,11 @@ reqStamp r w = do
 	hPutStrLn w $ show StampRequest
 	msg <- hGetLine r
 	hPutStrLn stderr $ "Receive: " ++ msg
-	case "StampReply" `L.isPrefixOf` msg of
-		False -> do
+	case parseCmd msg of
+		StampReply content -> return $ read content
+		_ -> do
 			hPutStrLn stderr "Unexpected command when requesting stamp"
 			return Map.empty
-		_ -> return $ read $ stripCommand msg
-
 
 
 -- | @client@ flags conflict 
@@ -259,18 +269,18 @@ clientSync r w dir = do
 serverLoop :: Bool -> ReplicaID -> Vector -> StampVector -> Handle -> Handle -> FilePath -> IO ()
 serverLoop turn rid vector stamp r w dir = do
 	request <- hGetLine r
-	case words request of
-		("DownloadRequest":fn:_) -> do
-			content <- readFile $ dir ++ "/" ++ stripCommand fn
+	case parseCmd request of
+		DownloadRequest fn -> do
+			content <- readFile $ dir ++ "/" ++ fn
 			hPutStrLn w . show $ DownloadReply content
 			serverLoop turn rid vector stamp r w dir
-		("VectorRequest":_) -> do 
+		VectorRequest -> do 
 			hPutStrLn w . show $ VectorReply $ show vector
 			serverLoop turn rid vector stamp r w dir
-		("StampRequest":_) -> do
+		StampRequest -> do
 			hPutStrLn w . show $ StampReply $ show stamp
 			serverLoop turn rid vector stamp r w dir
-		("Switch":_) -> do
+		Switch -> do
 			when turn $ client False r w dir
 		_ -> hPutStrLn stderr "Unrecognized command"
 
