@@ -72,9 +72,9 @@ getVector dir rid = do
 	case hasVec of
 		False -> return $ Map.singleton rid 1
 		_ -> do
-			map <- read <$> readFile filename
-			let version = fromJust $ Map.lookup rid map
-			return $ Map.insert rid (version + 1) map
+			m <- read <$> readFile filename
+			let version = fromJust $ Map.lookup rid m
+			return $ Map.insert rid (version + 1) m
 
 
 -- | Scan the files in the repository
@@ -112,45 +112,45 @@ getWriteStamp dir rid version = do
 -- | Merge the state of local and remote repositories
 mergeState :: Handle -> Handle -> FilePath -> Vector -> Vector -> StampVector -> StampVector -> IO StampVector
 mergeState r w dir lvv rvv lws rws = do
-	map <- foldM merge Map.empty $ L.nub $ Map.keys lws ++ Map.keys rws
-	return map
+	m <- foldM merge Map.empty $ L.nub $ Map.keys lws ++ Map.keys rws
+	return m
 	where
-		getValue key map = fromJust $ Map.lookup key map
+		getValue key mp = fromJust $ Map.lookup key mp
 		version fn vec
 			| Map.notMember fn vec = Nothing
 			| otherwise = (Just . snd . fst) $ getValue fn vec
 		replica fn vec
 			| Map.notMember fn vec = Nothing
 			| otherwise = (Just . fst . fst) $ getValue fn vec
-		hash fn vec
+		hashcode fn vec
 			| Map.notMember fn vec = Nothing
 			| otherwise = (Just . snd) $ getValue fn vec
-		merge map fn
-			| onBoth && (hash fn lws) == (hash fn rws) = 
-				return $ Map.insert fn val map
+		merge mp fn
+			| onBoth && (hashcode fn lws) == (hashcode fn rws) = 
+				return $ Map.insert fn val mp
 			| onBoth && (version fn rws) <= (flip Map.lookup lvv $ fromJust $ replica fn rws) = 
-				return $ Map.insert fn val map
+				return $ Map.insert fn val mp
 			| onBoth && (version fn lws) <= (flip Map.lookup rvv $ fromJust $ replica fn lws) = 
 				do
 					download r w dir fn
-					return $ Map.insert fn (getValue fn rws) map
+					return $ Map.insert fn (getValue fn rws) mp
 			| onBoth = 
 				do
 					flagConflict r w dir fn
-					return $ map
+					return $ mp
 			| onServer && (version fn rws > (flip Map.lookup lvv $ fromJust $ replica fn rws)) = 
 				do
 					download r w dir fn
-					return $ Map.insert fn (getValue fn rws) map
+					return $ Map.insert fn (getValue fn rws) mp
 			| onClient && (version fn lws <= (flip Map.lookup rvv $ fromJust $ replica fn lws)) =
 				do
 					exist <- doesFileExist $ dir ++ "/" ++ fn
 					case exist of
 						True -> removeFile $ dir ++ "/" ++ fn
 						_ -> return ()
-					return $ map
-			| onClient = return $ Map.insert fn val map 
-			| otherwise = return $ map
+					return $ mp
+			| onClient = return $ Map.insert fn val mp 
+			| otherwise = return $ mp
 			where
 				onClient = Map.member fn lws
 				onServer = Map.member fn rws
