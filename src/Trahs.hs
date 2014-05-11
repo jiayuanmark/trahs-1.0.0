@@ -118,7 +118,7 @@ getWriteStamp dir rid version = do
 	  	oldmap <- read <$> readFile filename
 	  	let
 	  	  search key = fromJust $ Map.lookup key oldmap
-	  	  (old, new) = (flip span) (Map.toList hashmap) (\(x, y) -> Map.member x oldmap && y == (snd $ search x))
+	  	  (old, new) = (flip L.partition) (Map.toList hashmap) (\(x, y) -> Map.member x oldmap && y == (snd $ search x))
 	  	return $ Map.fromList $ (map (\(x, y) -> (x, (writestamp, y))) new) ++ (map (\(x, _) -> (x, search x)) old)	  
 
 
@@ -162,7 +162,7 @@ mergeState r w dir lvv rvv lws rws = do
 						True -> removeFile $ dir ++ "/" ++ fn
 						_ -> return ()
 					return $ mp
-			| onClient = return $ Map.insert fn val mp 
+			| onClient = return $ Map.insert fn val mp
 			| otherwise = return $ mp
 			where
 				onClient = Map.member fn lws
