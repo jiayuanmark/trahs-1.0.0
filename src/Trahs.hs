@@ -25,8 +25,12 @@ type VersionNo = Integer
 -- | Version vector
 type Vector = Map.Map ReplicaID VersionNo
 
+-- | Write stamp
+type WriteStamp = (ReplicaID, VersionNo)
+
 -- | Write stamp array
-type StampVector = Map.Map FilePath ((ReplicaID, VersionNo), String)
+type StampVector = Map.Map FilePath (WriteStamp, String)
+
 
 -- | Command
 data Cmd = DownloadRequest String
@@ -36,6 +40,7 @@ data Cmd = DownloadRequest String
 		 | StampRequest
 		 | StampReply String
 		 | Switch
+		 | Conflict String
 		 deriving Show
 
 
@@ -149,7 +154,7 @@ mergeState r w dir lvv rvv lws rws = do
 					return $ Map.insert fn (getValue fn rws) mp
 			| onBoth = 
 				do
-					flagConflict r w dir fn
+					flagConflict r w dir fn (fst val) (fst $ getValue fn rws) 
 					return $ mp
 			| onServer && (version fn rws > (flip Map.lookup lvv $ fromJust $ replica fn rws)) = 
 				do
@@ -187,6 +192,7 @@ parseCmd str =
 		"StampRequest" -> StampRequest
 		"StampReply" -> StampReply payload
 		"Switch" -> Switch
+		"Conflict" -> Conflict payload
 		_ -> error "Undefined command"
 	where
 		(header, rest) = break (== ' ') str
@@ -235,9 +241,19 @@ reqStamp r w = do
 
 
 -- | @client@ flags conflict 
-flagConflict :: Handle -> Handle -> FilePath -> FilePath -> IO ()
-flagConflict _ _ dir fn = hPutStrLn stderr $ "Conflict on: " ++ dir ++ "/" ++ fn
-
+flagConflict :: Handle -> Handle -> FilePath -> FilePath -> WriteStamp -> WriteStamp -> IO ()
+flagConflict r w dir fn lws rws = do
+	hPutStrLn stderr $ "Conflict on: " ++ fn
+	localexist <- doesFileExist $ oldname
+	when localexist $ renameFile oldname $ newname oldname lws
+	download r w dir fn
+	remoteexist <- doesFileExist $ oldname
+	when remoteexist $ renameFile oldname $ newname oldname rws
+	hPutStrLn w $ show $ Conflict fn
+	where
+		oldname = dir ++ "/" ++ fn
+		newname nm ws = nm ++ "#" ++ (show $ fst ws) ++ "." ++ (show $ snd ws)
+		
 
 -- | Dump synchronization states into database on disk 
 storeState :: FilePath -> ReplicaID -> Vector -> StampVector -> IO ()
@@ -276,6 +292,9 @@ serverLoop turn rid vector stamp r w dir = do
 			serverLoop turn rid vector stamp r w dir
 		StampRequest -> do
 			hPutStrLn w . show $ StampReply $ show stamp
+			serverLoop turn rid vector stamp r w dir
+		Conflict fn -> do
+			removeFile $ dir ++ "/" ++ fn
 			serverLoop turn rid vector stamp r w dir
 		Switch -> do
 			when turn $ client False r w dir
