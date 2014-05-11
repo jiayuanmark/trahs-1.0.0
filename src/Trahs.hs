@@ -64,10 +64,11 @@ getReplicaID dir = do
 			return rid
 
 
--- | Get the version ID for a repository.
+-- | Get the version vector for this repository
+-- and increment the version ID for this repository
 -- Version vector is stored in .trahs.db/.vec
-getVector :: FilePath -> ReplicaID -> IO Vector
-getVector dir rid = do
+newVector :: FilePath -> ReplicaID -> IO Vector
+newVector dir rid = do
 	let filename = L.intercalate "/" [ dir, ".trahs.db", ".vec" ]
 	hasVec <- doesFileExist filename
 	case hasVec of
@@ -76,6 +77,17 @@ getVector dir rid = do
 			m <- read <$> readFile filename
 			let version = fromJust $ Map.lookup rid m
 			return $ Map.insert rid (version + 1) m
+
+
+-- | Get the version vector for this repository
+-- Version vector is stored in .trahs.db/.vec
+getVector :: FilePath -> ReplicaID -> IO Vector
+getVector dir rid = do
+	let filename = L.intercalate "/" [ dir, ".trahs.db", ".vec" ]
+	hasVec <- doesFileExist filename
+	case hasVec of
+		False -> return $ Map.singleton rid 0
+		_ -> read <$> readFile filename
 
 
 -- | Scan the files in the repository
@@ -276,7 +288,7 @@ server :: Bool -> Handle -> Handle -> FilePath -> IO ()
 server turn r w dir = do
 	ensureDir $ dir ++ "/.trahs.db"
 	rid <- getReplicaID dir
-	vector <- getVector dir rid
+	vector <- if turn then newVector dir rid else getVector dir rid 
 	stamp <- getWriteStamp dir rid . fromJust $ Map.lookup rid vector
 	storeState dir rid vector stamp
 	serverLoop turn rid vector stamp r w dir
@@ -292,14 +304,14 @@ server turn r w dir = do
 client :: Bool -> Handle -> Handle -> FilePath -> IO ()
 client turn r w dir = do
 	ensureDir $ dir ++ "/.trahs.db"
-	replica <- getReplicaID dir
-	lvv <- getVector dir replica
-	lws <- getWriteStamp dir replica $ fromJust $ Map.lookup replica lvv
+	rid <- getReplicaID dir
+	lvv <- if turn then newVector dir rid else getVector dir rid
+	lws <- getWriteStamp dir rid $ fromJust $ Map.lookup rid lvv
 	rvv <- reqVector r w
 	rws <- reqStamp r w
 	newlws <- mergeState r w dir lvv rvv lws rws
 	let newlvv = mergeVector lvv rvv
-	storeState dir replica newlvv newlws
+	storeState dir rid newlvv newlws
 	-- Switch roles
 	hPutStrLn w $ show Switch
 	when turn $ server False r w dir
