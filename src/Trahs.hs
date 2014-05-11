@@ -224,24 +224,21 @@ reqStamp r w = do
 
 -- | @client@ flags conflict 
 flagConflict :: Handle -> Handle -> FilePath -> FilePath -> IO ()
-flagConflict _ _ dir fn = hPutStrLn stderr $ "Conflict on" ++ dir ++ "/" ++ fn
+flagConflict _ _ dir fn = hPutStrLn stderr $ "Conflict on: " ++ dir ++ "/" ++ fn
 
 
 -- | Dump synchronization states into database on disk 
 storeState :: FilePath -> ReplicaID -> Vector -> StampVector -> IO ()
 storeState dir rid vec ws = do
 	ensureDir $ newdb
-	writeFile idfile $ show rid
-	writeFile vecfile $ show vec
-	writeFile wsfile $ show ws
+	writeFile (newdb ++ "/.id") $ show rid
+	writeFile (newdb ++ "/.vec") $ show vec
+	writeFile (newdb ++ "/.ws") $ show ws
 	removeDB olddb
 	renameDirectory newdb olddb
 	where
 		newdb = dir ++ "/.trahs.db~"
 		olddb = dir ++ "/.trahs.db"
-		idfile = newdb ++ "/.id"
-		vecfile = newdb ++ "/.vec"
-		wsfile = newdb ++ "/.ws"
 		removeDB db = do
 			forM_ (map ((++) (db ++ "/")) [ ".id", ".vec", ".ws"])
 				$ (\x -> do
@@ -252,22 +249,8 @@ storeState dir rid vec ws = do
 			removeDirectory db
 
 
--- |
-clientSync :: Handle -> Handle -> FilePath -> IO ()
-clientSync r w dir = do
-	ensureDir $ dir ++ "/.trahs.db"
-	replica <- getReplicaID dir
-	lvv <- getVector dir replica
-	lws <- getWriteStamp dir replica $ fromJust $ Map.lookup replica lvv
-	rvv <- reqVector r w
-	rws <- reqStamp r w
-	newlws <- mergeState r w dir lvv rvv lws rws
-	let newlvv = mergeVector lvv rvv
-	storeState dir replica newlvv newlws
-	return ()
 
-
--- |
+-- | @server@ process requests from @client@
 serverLoop :: Bool -> ReplicaID -> Vector -> StampVector -> Handle -> Handle -> FilePath -> IO ()
 serverLoop turn rid vector stamp r w dir = do
 	request <- hGetLine r
@@ -308,7 +291,16 @@ server turn r w dir = do
 -- done.
 client :: Bool -> Handle -> Handle -> FilePath -> IO ()
 client turn r w dir = do
-	clientSync r w dir
+	ensureDir $ dir ++ "/.trahs.db"
+	replica <- getReplicaID dir
+	lvv <- getVector dir replica
+	lws <- getWriteStamp dir replica $ fromJust $ Map.lookup replica lvv
+	rvv <- reqVector r w
+	rws <- reqStamp r w
+	newlws <- mergeState r w dir lvv rvv lws rws
+	let newlvv = mergeVector lvv rvv
+	storeState dir replica newlvv newlws
+	-- Switch roles
 	hPutStrLn w $ show Switch
 	when turn $ server False r w dir
 
