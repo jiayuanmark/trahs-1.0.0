@@ -1,4 +1,5 @@
-dist/*
 .DS_Store
+cabal*
+dist/*
 src/*.o
 src/*.hi

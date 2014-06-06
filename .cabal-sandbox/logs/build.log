@@ -1,0 +1,121 @@
+
+package: AES-0.2.9
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 random-1.0.1.1 monads-tf-0.1.0.2
+              cereal-0.4.0.1 bytestring-0.10.0.2 base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: SHA2-0.2.5
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 monads-tf-0.1.0.2
+              bytestring-0.10.0.2 base-4.6.0.1 AES-0.2.9
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: ansi-terminal-0.6.1.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+flags: splitbase -example
+dependencies: unix-2.6.0.1 base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Failed
+tests-outcome: NotTried
+
+package: cereal-0.4.0.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+flags: split-base
+dependencies: ghc-prim-0.3.0.0 containers-0.5.0.0
+              bytestring-0.10.0.2 base-4.6.0.1 array-0.4.0.1
+install-outcome: InstallOk
+docs-outcome: Failed
+tests-outcome: NotTried
+
+package: hspec-1.9.5
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 time-1.4.0.1 tf-random-0.5
+              setenv-0.1.1.1 random-1.0.1.1 quickcheck-io-0.1.1
+              hspec-expectations-0.5.0.1 filepath-1.3.0.1 directory-1.2.0.1
+              deepseq-1.3.0.1 base-4.6.0.1 ansi-terminal-0.6.1.1 QuickCheck-2.6
+              HUnit-1.2.5.2
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: hspec-expectations-0.5.0.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: base-4.6.0.1 HUnit-1.2.5.2
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: monads-tf-0.1.0.2
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: quickcheck-io-0.1.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: base-4.6.0.1 QuickCheck-2.6 HUnit-1.2.5.2
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: setenv-0.1.1.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: unix-2.6.0.1 base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: tf-random-0.5
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+dependencies: time-1.4.0.1 random-1.0.1.1 primitive-0.5.0.1
+              base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried
+
+package: unix-compat-0.4.1.1
+os: osx
+arch: x86_64
+compiler: ghc-7.6.3
+client: cabal-install-1.20.0.1
+flags: -old-time
+dependencies: unix-2.6.0.1 base-4.6.0.1
+install-outcome: InstallOk
+docs-outcome: Ok
+tests-outcome: NotTried

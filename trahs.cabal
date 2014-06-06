@@ -2,7 +2,7 @@ name:           trahs
 version:        1.0.0
 synopsis:       Stanford CS240h Lab 3 - File Synchronizer
 build-type:     Simple
-cabal-version:  >= 1.8
+cabal-version:  >= 1.10
 category:       System
 
 -- STUDENTS: Make sure you add any no haskell source files you want included in
@@ -24,7 +24,6 @@ library
    ,random
    ,SHA2
    ,unix-compat
-  
   default-language: Haskell2010
   ghc-options: -Wall
 
@@ -33,6 +32,8 @@ executable trahs
   build-depends:
     base < 5
    ,trahs
+  default-language: Haskell2010
+  ghc-options: -Wall
   
 test-suite test-trahs
   type: exitcode-stdio-1.0
@@ -43,5 +44,6 @@ test-suite test-trahs
    ,QuickCheck > 2.5
    ,hspec
    ,trahs
+  default-language: Haskell2010
   ghc-options: -Wall
 
