@@ -1,4 +1,5 @@
-% Stanford CS240h Lab 3
+Stanford CS240h Lab 3
+=====================
 
 In this lab, you will build a multi-way file synchronizer called
 `trahs`. This is will be a simplified version of the [tra] file
